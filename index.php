@@ -6,6 +6,6 @@ foreach ($env as $key => $value){
     $_ENV[$key] = $value;
 }
 
-require_once("db. php");
-require_once(' controllers/mainController php');
+require_once("db.php");
+require_once('controllers/mainController.php');
 ?>

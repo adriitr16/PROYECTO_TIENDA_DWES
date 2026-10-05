@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda Online</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+    <header>
+        <h1>🛒 Mi Tienda</h1>
+        <nav>
+            <a href="index.php">Catálogo</a>
+            
+            <?php if (isset($_SESSION['usuario'])): ?>
+                <a href="index.php?action=carrito">🛒 Carrito</a>
+                <a href="index.php?action=mis_pedidos">Mis Pedidos</a>
+                <span>Hola, <strong><?= htmlspecialchars($_SESSION['usuario']['NOMBRE']) ?></strong></span>
+                <a href="index.php?action=logout" class="btn">Cerrar Sesión</a>
+            <?php else: ?>
+                <a href="index.php?action=login">Iniciar Sesión</a>
+                <a href="index.php?action=registro" class="btn">Registrarse</a>
+            <?php endif; ?>
+        </nav>
+    </header>
+
+    <main>
+        <?php if (!empty($error)): ?>
+            <div class="alert-error">
+                <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php 
+        $seccion = $vistaContenido ?? 'catalogo';
+
+        if ($seccion === 'login'): ?>
+
+            <!-- LOGIN -->
+            <div class="form-container">
+                <h2>Iniciar Sesión</h2>
+                <form action="index.php?action=do_login" method="POST">
+                    <div class="form-group">
+                        <label>Correo Electrónico</label>
+                        <input type="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" name="password" required>
+                    </div>
+                    <button type="submit">Entrar</button>
+                </form>
+            </div>
+
+        <?php elseif ($seccion === 'registro'): ?>
+
+            <!-- REGISTRO -->
+            <div class="form-container">
+                <h2>Crear Cuenta</h2>
+                <form action="index.php?action=do_registro" method="POST">
+                    <div class="form-group">
+                        <label>Nombre Completo *</label>
+                        <input type="text" name="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Correo Electrónico *</label>
+                        <input type="email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña *</label>
+                        <input type="password" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Teléfono</label>
+                        <input type="text" name="telefono">
+                    </div>
+                    <button type="submit">Registrarse</button>
+                </form>
+            </div>
+
+        <?php elseif ($seccion === 'carrito'): ?>
+
+            <!-- CARRITO DE COMPRAS -->
+            <h2>🛒 Tu Cesta de la Compra</h2>
+            <?php if (empty($itemsCarrito)): ?>
+                <p>Tu carrito está vacío.</p>
+            <?php else: ?>
+                <table class="tabla-tienda">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Precio</th>
+                            <th>Cantidad</th>
+                            <th>Subtotal</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $total = 0; ?>
+                        <?php foreach ($itemsCarrito as $item): ?>
+                            <?php $total += $item['SUBTOTAL']; ?>
+                            <tr>
+                                <td><?= htmlspecialchars($item['NOMBRE']) ?></td>
+                                <td><?= number_format($item['PRECIO'], 2) ?> €</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <!-- Restar 1 unidad -->
+                                        <a href="index.php?action=update_cart&id_carrito=<?= $item['ID_CARRITO'] ?>&id_producto=<?= $item['ID_PRODUCTO'] ?>&cantidad=<?= $item['CANTIDAD'] - 1 ?>" 
+                                           style="padding: 0.2rem 0.6rem; background: #e2e8f0; border-radius: 4px; text-decoration: none; font-weight: bold; color: #1e293b;">-</a>
+                                        
+                                        <span><strong><?= $item['CANTIDAD'] ?></strong></span>
+                                        
+                                        <!-- Sumar 1 unidad -->
+                                        <a href="index.php?action=update_cart&id_carrito=<?= $item['ID_CARRITO'] ?>&id_producto=<?= $item['ID_PRODUCTO'] ?>&cantidad=<?= $item['CANTIDAD'] + 1 ?>" 
+                                           style="padding: 0.2rem 0.6rem; background: #e2e8f0; border-radius: 4px; text-decoration: none; font-weight: bold; color: #1e293b;">+</a>
+                                    </div>
+                                </td>
+                                <td><?= number_format($item['SUBTOTAL'], 2) ?> €</td>
+                                <td>
+                                    <a href="index.php?action=remove_cart&id_carrito=<?= $item['ID_CARRITO'] ?>" class="link-danger">Eliminar Todo</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <h3>Total: <?= number_format($total, 2) ?> €</h3>
+                <a href="index.php?action=checkout" class="btn-checkout">Finalizar Compra</a>
+            <?php endif; ?>
+
+        <?php elseif ($seccion === 'mis_pedidos'): ?>
+
+            <!-- MIS PEDIDOS -->
+            <h2>📦 Historial de Pedidos</h2>
+            <?php if (empty($pedidos)): ?>
+                <p>Aún no has realizado ninguna compra.</p>
+            <?php else: ?>
+                <table class="tabla-tienda">
+                    <thead>
+                        <tr>
+                            <th>Nº Pedido</th>
+                            <th>Producto</th>
+                            <th>Fecha</th>
+                            <th>Cantidad</th>
+                            <th>Total</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($pedidos as $p): ?>
+                            <tr>
+                                <td>#<?= $p['ID_PEDIDO'] ?></td>
+                                <td><?= htmlspecialchars($p['NOMBRE']) ?></td>
+                                <td><?= $p['FECHA'] ?></td>
+                                <td><?= $p['CANTIDAD'] ?></td>
+                                <td><?= number_format($p['TOTAL'], 2) ?> €</td>
+                                <td>
+                                    <a href="index.php?action=cancel_order&id_pedido=<?= $p['ID_PEDIDO'] ?>" 
+                                       class="link-danger" 
+                                       onclick="return confirm('¿Estás seguro de que deseas cancelar este pedido?');">
+                                        Cancelar
+                                    </a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+
+        <?php else: ?>
+
+            <!-- CATÁLOGO (POR DEFECTO) -->
+            <h2>Catálogo de Productos</h2>
+            <?php if (empty($productos)): ?>
+                <p>No hay productos disponibles en este momento.</p>
+            <?php else: ?>
+                <div class="grid">
+                    <?php foreach ($productos as $producto): ?>
+                        <div class="card">
+                            <div>
+                                <h3><?= htmlspecialchars($producto['NOMBRE']) ?></h3>
+                                <p><?= htmlspecialchars($producto['DESCRIPCION']) ?></p>
+                            </div>
+                            <div>
+                                <div class="price"><?= number_format($producto['PRECIO'], 2) ?> €</div>
+                                <div class="stock">Stock disponible: <?= $producto['STOCK'] ?> unid.</div>
+                                
+                                <?php if (isset($_SESSION['usuario'])): ?>
+                                    <form action="index.php?action=add_cart" method="POST">
+                                        <input type="hidden" name="id_producto" value="<?= $producto['ID_PRODUCTO'] ?>">
+                                        <input type="number" name="cantidad" value="1" min="1" max="<?= $producto['STOCK'] ?>" class="input-cantidad">
+                                        <button type="submit">Añadir al Carrito</button>
+                                    </form>
+                                <?php else: ?>
+                                    <a href="index.php?action=login" class="login-link">Inicia sesión para comprar</a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+        <?php endif; ?>
+    </main>
+
+</body>
+</html>
